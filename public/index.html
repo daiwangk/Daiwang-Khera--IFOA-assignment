@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>EASA Adaptive Quiz</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="hero">
+        <h1>EASA Flight Dispatcher Adaptive Quiz</h1>
+        <p>
+          AI-generated questions on Navigation and Meteorology. 10 adaptive levels, instant evaluation,
+          and a final competency level.
+        </p>
+      </header>
+
+      <section class="panel" id="quiz-panel">
+        <div class="meta-row">
+          <span id="question-count">Question -</span>
+          <span id="level-badge">Level -</span>
+          <span id="topic-badge">Topic -</span>
+        </div>
+
+        <p id="question-text" class="question-text">Press Start to begin your adaptive quiz.</p>
+
+        <form id="answer-form">
+          <label>Your answer (choose one option)</label>
+          <div id="options-container" class="options-grid"></div>
+          <div class="button-row">
+            <button id="start-btn" type="button">Start Quiz</button>
+            <button id="submit-btn" type="submit" disabled>Submit Answer</button>
+            <button id="next-btn" type="button" class="hidden" disabled>Next Question</button>
+          </div>
+        </form>
+
+        <div id="feedback" class="feedback hidden"></div>
+        <div id="final-result" class="final hidden"></div>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>

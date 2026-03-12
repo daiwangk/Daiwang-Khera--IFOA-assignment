@@ -1,15 +1,22 @@
 import json
 import os
 import random
+from datetime import date
 from pathlib import Path
-from typing import Any
+from typing import Any, Generator
 
 import httpx
 import jwt
 from dotenv import load_dotenv
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import Depends, FastAPI, HTTPException, Request
 from fastapi.responses import FileResponse
+from fastapi.responses import HTMLResponse
 from fastapi.responses import JSONResponse
+from sqlalchemy.orm import Session
+
+from assignment_2.pdf_service import generate_certificate
+from database import Base, ParticipantRecord, SessionLocal, engine
+from schemas import CertificateRequest, ParticipantRecordCreate, ParticipantRecordRead
 
 load_dotenv()
 
@@ -27,6 +34,16 @@ USE_MOCK_LLM = os.getenv("USE_MOCK_LLM", "false").strip().lower() in {"1", "true
 MAX_QUESTIONS = 10
 MAX_LEVEL = 10
 TOPICS = ["Aviation Navigation", "Aviation Meteorology"]
+
+Base.metadata.create_all(bind=engine)
+
+
+def get_db() -> Generator[Session, None, None]:
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
 
 class AIResponseFormatError(Exception):
@@ -532,9 +549,86 @@ async def api_submit(payload: dict[str, Any]):
         raise HTTPException(status_code=500, detail=str(error)) from error
 
 
-@app.get("/")
+@app.get("/", response_class=HTMLResponse)
 async def index():
+    return (BASE_DIR / "index.html").read_text(encoding="utf-8")
+
+
+@app.get("/quiz")
+async def quiz_page():
     return FileResponse(PUBLIC_DIR / "index.html")
+
+
+@app.get("/records", response_model=list[ParticipantRecordRead])
+def get_records(db: Session = Depends(get_db)):
+    return db.query(ParticipantRecord).order_by(ParticipantRecord.id.asc()).all()
+
+
+@app.post("/seed", response_model=list[ParticipantRecordRead])
+def seed_records(db: Session = Depends(get_db)):
+    sample_payloads = [
+        {
+            "participant_name": "Aarav Mehta",
+            "company": "SkyBridge Aviation",
+            "department": "Operations",
+            "type_of_training": "Recurrent",
+            "training_date": date(2026, 1, 15),
+        },
+        {
+            "participant_name": "Neha Kapoor",
+            "company": "Nimbus Air",
+            "department": "Dispatch",
+            "type_of_training": "Initial",
+            "training_date": date(2026, 2, 2),
+        },
+        {
+            "participant_name": "Rohan Verma",
+            "company": "AeroLine Services",
+            "department": "Safety",
+            "type_of_training": "Human Factors",
+            "training_date": date(2026, 2, 20),
+        },
+    ]
+
+    inserted_rows: list[ParticipantRecord] = []
+    for payload in sample_payloads:
+        validated = ParticipantRecordCreate(**payload)
+        record = ParticipantRecord(
+            participant_name=validated.participant_name,
+            company=validated.company,
+            department=validated.department,
+            type_of_training=validated.type_of_training,
+            training_date=validated.training_date,
+        )
+        db.add(record)
+        inserted_rows.append(record)
+
+    db.commit()
+    for row in inserted_rows:
+        db.refresh(row)
+
+    return inserted_rows
+
+
+@app.post("/generate/{record_id}")
+def generate_certificate_endpoint(
+    record_id: int,
+    request: CertificateRequest,
+    db: Session = Depends(get_db),
+):
+    record = db.query(ParticipantRecord).filter(ParticipantRecord.id == record_id).first()
+    if not record:
+        raise HTTPException(status_code=404, detail="Record not found")
+
+    if record.type_of_training == "Recurrent" and not request.modules:
+        raise HTTPException(status_code=400, detail="Modules are required for Recurrent training")
+
+    pdf_path = generate_certificate(record, request.modules)
+    return FileResponse(
+        path=pdf_path,
+        media_type="application/pdf",
+        filename=os.path.basename(pdf_path),
+    )
 
 
 @app.get("/{file_path:path}")

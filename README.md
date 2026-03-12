@@ -1,74 +1,97 @@
 # Daiwang-Khera--IFOA-assignment
 
-AI/Automation/Data Systems technical assignment submission.
+## 1. Project Overview
 
-## Assignment 1 - AI-Driven Adaptive Quiz (EASA Flight Dispatcher)
+This repository contains both required tasks:
+- Assignment 1: AI-Driven Adaptive Quiz (EASA Flight Dispatcher topics: Navigation and Meteorology)
+- Assignment 2: Automated Certificate Generation System (database records + template-based PDF output)
 
-This project is a local web app that uses the Gemini API to:
-- Generate MCQ quiz questions dynamically (no pre-made question bank)
-- Adapt level progression over 10 levels
-- Evaluate answers immediately after each submission
-- Provide feedback and final level after 10 questions
+Live Demo URLs:
+- Assignment 1: Not deployed (local setup provided below)
+- Assignment 2: Not deployed (local setup provided below)
 
-## Tech Stack
-- FastAPI (Python backend)
-- Vanilla HTML/CSS/JS (frontend)
-- Gemini API (configured via `GEMINI_MODELS`, with `gemini-2.5-pro` supported)
+Submission link:
+- GitHub repository: https://github.com/daiwangk/Daiwang-Khera--IFOA-assignment
 
-## Setup
-1. Install Python 3.10+.
-2. In project folder, install dependencies:
-   ```bash
-   pip install -r requirements.txt
-   ```
-3. Create `.env` from `.env.example`:
-   ```bash
-   copy .env.example .env
-   ```
-4. Open `.env` and set your key:
-   ```env
-   GEMINI_API_KEY=PASTE_YOUR_KEY_HERE
-   GEMINI_MODELS=gemini-2.5-pro,gemini-2.5-flash,gemini-2.0-flash
-   QUIZ_JWT_SECRET=PASTE_A_LONG_RANDOM_SECRET
-   PORT=3000
-   ```
-5. Start server:
-   ```bash
-   uvicorn main:app --reload --port 3000
-   ```
-6. Open `http://localhost:3000`.
+## 2. System Design & Workflow (Required Deliverable)
 
-## How Adaptation Works
-- Quiz runs for exactly 10 questions.
-- Current level starts at 1.
-- If answer is correct: level increases by 1 (up to level 10).
-- If answer is incorrect: level remains the same.
-- Final level after question 10 is shown as user competency outcome.
-- Topic coverage is guaranteed per run with 5 Navigation and 5 Meteorology questions shuffled across the session.
+Architecture:
+- I implemented a monolithic FastAPI backend with SQLite to minimize external dependencies and keep local testing frictionless for reviewers.
+- A single service exposes API endpoints for quiz flow, record management, and certificate generation.
+- SQLite + SQLAlchemy were selected for simple setup, deterministic behavior, and easy portability.
 
-## System Design & Logic
-- Backend is stateless. It does not store per-user progress in server memory.
-- Backend signs quiz state in a JWT (`stateToken`) with `current_level`, `correct_count`, `question_count`, and `correct_answer_key`.
-- Frontend (`public/app.js`) stores and sends this `stateToken` on submit/generate calls.
-- Backend decodes JWT and performs deterministic correctness checks server-side, preventing score tampering.
-- `POST /api/start` generates the first question from incoming `currentLevel` and `questionCount`.
-- `POST /api/submit` evaluates the user answer using the incoming current question and state, then returns the next computed level and counters.
-- `POST /api/generate` generates the next question from the updated state sent by the frontend.
-- Adaptive leveling rule: The user starts at Level 1. A correct answer increases the level by 1 (max 10). An incorrect answer keeps the user at the current level. The final level out of 10 reflects total correct answers, naturally capping the difficulty based on mistakes.
-- Question format is MCQ: each question includes 4 options (A-D) with exactly one correct answer.
+The PDF Engine:
+- Instead of generating certificates from scratch (brittle and style-inconsistent), I used the provided template PDFs and mapped exact (X, Y) pixel coordinates.
+- I used PyMuPDF (fitz) to overlay dynamic values from database records onto those templates.
+- This coordinate-mapping strategy keeps visual fidelity with official templates while supporting automation.
 
-## API Endpoints
-- `POST /api/start` -> generates question 1 from frontend-provided `currentLevel` and `questionCount`
-- `POST /api/submit` -> evaluates answer from frontend-provided question/state and returns updated level/counters
-- `POST /api/generate` -> generates the next question from updated frontend state
+Workflow summary:
+- Assignment 1: start quiz -> submit answer -> adaptive level update -> next question generation -> final level outcome.
+- Assignment 2: fetch records -> user clicks Generate Certificate -> optional recurrent module selection -> backend fills template -> downloadable PDF returned.
 
-## UI Behavior Note
-- After each answer, feedback is shown.
-- The user advances manually with a Next Question button after reading the feedback.
-- When the next question is loaded, the previous feedback panel is automatically hidden so incorrect feedback does not persist into the next question.
+How this addresses evaluation criteria:
+- System design: modular, API-driven backend with clear separation of concerns.
+- Automation logic: end-to-end record-to-certificate generation and downloadable output.
+- User experience: clean dashboard, responsive table, and guided module modal for recurrent training.
+- Scalability: coordinate dictionary and endpoint structure support adding new training types/templates without rewriting core logic.
 
-## Deliverable Notes
-- Working demo: run locally as above.
-- Source code: all files in this folder.
-- Questions are generated at runtime via Gemini and are not hardcoded.
-- For local development without live Gemini calls, set `USE_MOCK_LLM=true`.
+## 3. Use of AI Tools (Required Deliverable)
+
+I used AI tools (GitHub Copilot and LLM assistance) as intelligent autocomplete and boilerplate acceleration.
+
+I explicitly drove the key engineering decisions:
+- Monolithic FastAPI + SQLite architecture.
+- Dictionary-driven coordinate mapping for each certificate type.
+- Validation and business rules, including strict handling of recurrent module requirements (HTTP 400 when modules are missing).
+- Endpoint contracts and local verification strategy.
+
+## 4. Local Setup Instructions
+
+Run these commands from the project root:
+
+```bash
+python -m venv .venv
+```
+
+Windows PowerShell:
+
+```bash
+.\.venv\Scripts\Activate.ps1
+```
+
+Install dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
+Create env file:
+
+```bash
+copy .env.example .env
+```
+
+Start server:
+
+```bash
+uvicorn main:app --reload --host 0.0.0.0 --port 3000
+```
+
+Open in browser:
+- Assignment 2 dashboard: http://localhost:3000/
+- Assignment 1 quiz: http://localhost:3000/quiz
+
+Optional data seed for Assignment 2:
+
+```bash
+curl -X POST http://localhost:3000/seed
+```
+
+## 5. Prioritizing Truth over Agreement
+
+The prompt allows either a live link or local setup. I intentionally prioritized correctness and reproducibility over claiming a hosted deployment.
+
+So this submission provides:
+- A complete GitHub source submission.
+- Clear local setup instructions for deterministic reviewer execution.
+- Honest scope: no fabricated cloud deployment link, only validated local runtime flow.

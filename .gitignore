@@ -1,4 +1,8 @@
 .env
 .venv/
+venv/
 __pycache__/
 *.pyc
+generated_certs/
+grid_*.pdf
+assignment_2/assignment2.db

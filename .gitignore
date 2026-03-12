@@ -4,5 +4,10 @@ venv/
 __pycache__/
 *.pyc
 generated_certs/
+!generated_certs/
+generated_certs/*
+!generated_certs/Aarav_Mehta_Recurrent.pdf
+!generated_certs/John_Doe_Recurrent.pdf
+!generated_certs/Priya_Singh_Initial.pdf
 grid_*.pdf
 assignment_2/assignment2.db

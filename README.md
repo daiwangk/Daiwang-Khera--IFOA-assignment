@@ -1,97 +1,127 @@
-# Daiwang-Khera--IFOA-assignment
+   # Daiwang-Khera--IFOA-assignment
 
-## 1. Project Overview
+   This repository contains both required tasks from the Technical Assignment - AI / Automation / Data Systems.
 
-This repository contains both required tasks:
-- Assignment 1: AI-Driven Adaptive Quiz (EASA Flight Dispatcher topics: Navigation and Meteorology)
-- Assignment 2: Automated Certificate Generation System (database records + template-based PDF output)
+   - Assignment 1: AI-Driven Adaptive Quiz System (EASA Flight Dispatcher)
+   - Assignment 2: Automated Certificate Generation System
 
-Live Demo URLs:
-- Assignment 1: Not deployed (local setup provided below)
-- Assignment 2: Not deployed (local setup provided below)
+   Live demo URLs:
+   - Not deployed to cloud (local setup provided below, as allowed by the prompt)
 
-Submission link:
-- GitHub repository: https://github.com/daiwangk/Daiwang-Khera--IFOA-assignment
+   Repository:
+   - https://github.com/daiwangk/Daiwang-Khera--IFOA-assignment
 
-## 2. System Design & Workflow (Required Deliverable)
+   ## 1. Project Overview
 
-Architecture:
-- I implemented a monolithic FastAPI backend with SQLite to minimize external dependencies and keep local testing frictionless for reviewers.
-- A single service exposes API endpoints for quiz flow, record management, and certificate generation.
-- SQLite + SQLAlchemy were selected for simple setup, deterministic behavior, and easy portability.
+   ### Assignment 1 - AI Adaptive Quiz
+   An AI-powered quiz platform focused on EASA Flight Dispatcher concepts in:
+   - Aviation Navigation
+   - Aviation Meteorology
 
-The PDF Engine:
-- Instead of generating certificates from scratch (brittle and style-inconsistent), I used the provided template PDFs and mapped exact (X, Y) pixel coordinates.
-- I used PyMuPDF (fitz) to overlay dynamic values from database records onto those templates.
-- This coordinate-mapping strategy keeps visual fidelity with official templates while supporting automation.
+   Key behaviors:
+   - 10-question session
+   - Adaptive levels (1 to 10)
+   - Immediate answer evaluation
+   - Correct/incorrect feedback with explanation
+   - Final level based on performance
 
-Workflow summary:
-- Assignment 1: start quiz -> submit answer -> adaptive level update -> next question generation -> final level outcome.
-- Assignment 2: fetch records -> user clicks Generate Certificate -> optional recurrent module selection -> backend fills template -> downloadable PDF returned.
+   ### Assignment 2 - Automated Certificate Generator
+   A certificate generation dashboard backed by SQLite records.
 
-How this addresses evaluation criteria:
-- System design: modular, API-driven backend with clear separation of concerns.
-- Automation logic: end-to-end record-to-certificate generation and downloadable output.
-- User experience: clean dashboard, responsive table, and guided module modal for recurrent training.
-- Scalability: coordinate dictionary and endpoint structure support adding new training types/templates without rewriting core logic.
+   Key behaviors:
+   - Record table view with required fields
+   - Generate Certificate action per record
+   - Training-type-based template selection
+   - Dynamic PDF field stamping (participant, company, department, dates)
+   - Recurrent training modal for module selection and module printing
 
-## 3. Use of AI Tools (Required Deliverable)
+   ## 2. System Design & Workflow (Required Deliverable)
 
-I used AI tools (GitHub Copilot and LLM assistance) as intelligent autocomplete and boilerplate acceleration.
+   ### Architecture
+   I implemented a monolithic FastAPI backend with SQLite to minimize external dependencies and make local reviewer setup frictionless.
 
-I explicitly drove the key engineering decisions:
-- Monolithic FastAPI + SQLite architecture.
-- Dictionary-driven coordinate mapping for each certificate type.
-- Validation and business rules, including strict handling of recurrent module requirements (HTTP 400 when modules are missing).
-- Endpoint contracts and local verification strategy.
+   Why this design:
+   - Single-process service is simple to run and verify
+   - SQLite avoids external database setup
+   - API-first structure keeps frontend and backend responsibilities separated
 
-## 4. Local Setup Instructions
+   ### Assignment 1 Workflow
+   1. `POST /api/start` initializes quiz state and generates question 1.
+   2. `POST /api/submit` evaluates answer immediately and updates level progression.
+   3. `POST /api/generate` generates the next question with updated difficulty context.
+   4. After question 10, final level and result summary are returned.
 
-Run these commands from the project root:
+   ### Assignment 2 Workflow
+   1. `GET /records` returns all participant records.
+   2. Dashboard renders table and action buttons.
+   3. Clicking Generate Certificate calls `POST /generate/{record_id}`.
+   4. For `Recurrent` training, modules are required and validated.
+   5. Backend generates a PDF and streams it as a downloadable file.
 
-```bash
-python -m venv .venv
-```
+   ### The PDF Engine Strategy
+   Instead of generating certificate layouts from scratch (brittle and hard to keep aligned), I mapped exact `(x, y)` coordinates for the provided certificate templates and used PyMuPDF to overlay dynamic values.
 
-Windows PowerShell:
+   Benefits:
+   - Preserves official template appearance
+   - Reduces layout drift risk
+   - Scales by adding new template mappings rather than rewriting rendering logic
 
-```bash
-.\.venv\Scripts\Activate.ps1
-```
+   ## 3. Use of AI Tools (Required Deliverable)
 
-Install dependencies:
+   I used AI tools (GitHub Copilot / LLM assistance) as coding support for:
+   - boilerplate generation
+   - faster refactoring
+   - validation of edge-case handling
 
-```bash
-pip install -r requirements.txt
-```
+   I made and enforced the core technical decisions:
+   - monolithic FastAPI + SQLite architecture
+   - dictionary-driven certificate coordinate mapping
+   - strict validation rules (for example, HTTP 400 when recurrent modules are missing)
+   - endpoint contracts and local verification workflow
 
-Create env file:
+   ## 4. Local Setup Instructions
 
-```bash
-copy .env.example .env
-```
+   ### Prerequisites
+   - Python 3.10+
+   - Windows PowerShell (or any shell with equivalent commands)
 
-Start server:
+   ### Install and run
+   ```bash
+   python -m venv .venv
+   ```
 
-```bash
-uvicorn main:app --reload --host 0.0.0.0 --port 3000
-```
+   ```bash
+   .\.venv\Scripts\Activate.ps1
+   ```
 
-Open in browser:
-- Assignment 2 dashboard: http://localhost:3000/
-- Assignment 1 quiz: http://localhost:3000/quiz
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-Optional data seed for Assignment 2:
+   ```bash
+   copy .env.example .env
+   ```
 
-```bash
-curl -X POST http://localhost:3000/seed
-```
+   Edit `.env` and provide your Gemini key if testing live AI generation.
 
-## 5. Prioritizing Truth over Agreement
+   ```bash
+   uvicorn main:app --reload --host 0.0.0.0 --port 3000
+   ```
 
-The prompt allows either a live link or local setup. I intentionally prioritized correctness and reproducibility over claiming a hosted deployment.
+   ### Open in browser
+   - Assignment 2 dashboard: `http://localhost:3000/`
+   - Assignment 1 quiz: `http://localhost:3000/quiz`
 
-So this submission provides:
-- A complete GitHub source submission.
-- Clear local setup instructions for deterministic reviewer execution.
-- Honest scope: no fabricated cloud deployment link, only validated local runtime flow.
+   ### Optional seed command (Assignment 2)
+   ```bash
+   curl -X POST http://localhost:3000/seed
+   ```
+
+   ## 5. Deliverables Checklist
+
+   - Working application (local demo): Yes
+   - Source code: Yes
+   - Sample certificate templates: Yes (`templates/`)
+   - Generated PDF examples: Yes (`generated_certs/`)
+   - System design and workflow explanation: Yes
+
